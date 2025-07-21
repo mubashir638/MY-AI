@@ -1,15 +1,18 @@
-import React, { useState } from "react";
-import { Trash2, Bot, Mic, Send } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Trash2, Bot, Mic, Send, Volume2, Square } from "lucide-react";
 
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [listening, setListening] = useState(false);
+  const [Sendmessage, setSendMessage] = useState(false);
+  const [speakingIndex, setSpeakingIndex] = useState(null);
 
   const getStorechats = () => {
     return JSON.parse(localStorage.getItem("chats") || "[]");
   };
+
   const saveChatsLocalStorage = (chats) => {
     localStorage.setItem("chats", JSON.stringify(chats));
   };
@@ -34,7 +37,6 @@ const Chat = () => {
       });
 
       const data = await response.json();
-
       const botText =
         data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
       const botMessage = { sender: "bot", text: botText };
@@ -64,6 +66,7 @@ const Chat = () => {
     setMessages((prev) => [...prev, userMessage]);
     setMessage("");
     setIsTyping(true);
+    setSendMessage(true);
 
     await generateBotReply(message, userMessage);
     setIsTyping(false);
@@ -80,10 +83,6 @@ const Chat = () => {
     setMessages([]);
     setMessage("");
     setIsTyping(false);
-  };
-
-  const handleSelectChat = (chat) => {
-    setMessages(chat.messages);
   };
 
   const handleMic = () => {
@@ -121,29 +120,54 @@ const Chat = () => {
     recognition.start();
   };
 
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setSendMessage(false);
+  }, [messages]);
+
+  const speak = (text, index) => {
+    if (speechSynthesis.speaking && speakingIndex === index) {
+      speechSynthesis.cancel();
+      setSpeakingIndex(null);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 1;
+
+    utterance.onend = () => {
+      setSpeakingIndex(null);
+    };
+
+    setSpeakingIndex(index);
+    speechSynthesis.speak(utterance);
+  };
+
   return (
-    <section className=" ml-[-85px]  sm:ml-24 xl:ml-0 lg:ml-12 flex flex-col h-screen text-white  ">
+    <section className="ml-[-85px] sm:ml-24 xl:ml-0 lg:ml-12 flex flex-col h-screen text-white">
       {/* Navbar */}
-      <div className="flex items-center justify-between  ml-0 xl:ml-[-15px] bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026] p-3">
+      <div className="flex items-center justify-between ml-0 xl:ml-[-15px] bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026] p-3">
         <div className="flex items-center space-x-2">
-          <div className="bg-[#130E21] rounded-full ml-[80px]  sm:ml-14 p-2">
+          <div className="bg-[#130E21] rounded-full ml-[80px] sm:ml-14 p-2">
             <Bot className="h-7 w-7 text-blue-600" />
           </div>
-          <div className=" flex-col hidden sm:flex">
+          <div className="flex-col hidden sm:flex">
             <span className="font-medium">AI Chat</span>
             <span className="text-xs text-gray-400">Powered by Gemini</span>
           </div>
         </div>
         <button
           onClick={handleClear}
-          className="flex items-center px-2 py-1 bg-[#155DFC] xl:mr-10  rounded-sm sm:rounded-md"
+          className="flex items-center px-2 py-1 bg-[#155DFC] xl:mr-10 rounded-sm sm:rounded-md"
         >
           <Trash2 size={20} className="sm:mr-1" />
           <span className="hidden sm:block">Clear</span>
         </button>
       </div>
 
-      <hr className="border-zinc-700  ml-0 xl:ml-[-15px]" />
+      <hr className="border-zinc-700 ml-0 xl:ml-[-15px]" />
 
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4">
@@ -156,7 +180,7 @@ const Chat = () => {
               Start a Conversation
             </div>
             <div className="max-w-xs bg-transparent border rounded-lg p-4 space-y-3 text-sm sm:text-xl ">
-              <h2 className=" font-semibold flex items-center">
+              <h2 className="font-semibold flex items-center">
                 Welcome to AI Chat!
                 <Bot size={16} className="ml-2 text-gray-400" />
               </h2>
@@ -164,26 +188,41 @@ const Chat = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-2 ml-5 sm:ml-0 ">
+          <div className="space-y-2 ml-5 sm:ml-0">
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`flex  ${
+                className={`flex ${
                   msg.sender === "user" ? "justify-end" : "justify-start"
                 }`}
               >
                 <div
-                  className={`px-4 py-2 rounded-lg sm:max-w-2xl  text-sm sm:text-lg break-words whitespace-pre-wrap ${
+                  className={`relative px-4 py-2 rounded-lg max-w-[90%] sm:max-w-2xl text-sm sm:text-lg break-words whitespace-pre-wrap ${
                     msg.sender === "user"
-                      ? "bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026] text-white"
+                      ? "bg-[#155DFC] text-white"
                       : "bg-purple-600 text-gray-200"
                   }`}
                 >
                   {msg.text}
+
+                  {msg.sender !== "user" && (
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        onClick={() => speak(msg.text, index)}
+                        className="text-white p-2 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 "
+                        title={speakingIndex === index ? "Stop" : "Listen"}
+                      >
+                        {speakingIndex === index ? (
+                          <Square size={18} />
+                        ) : (
+                          <Volume2 size={18} />
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
-
             {isTyping && (
               <div className="flex justify-start">
                 <div className="flex space-x-1 bg-[#155DFC] p-2 rounded-lg">
@@ -193,15 +232,16 @@ const Chat = () => {
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </div>
 
-      <hr className="border-zinc-700 ml-0 xl:ml-[-15px] " />
+      <hr className="border-zinc-700 ml-0 xl:ml-[-15px]" />
 
       {/* Input area */}
-      <div className="flex items-center  ml-0 xl:ml-[-15px] p-3 space-x-2 bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026]">
-        <div className="flex items-center ml-[15px]  sm:ml-0 bg-black p-2 rounded-lg w-full max-w-xl border border-purple-500">
+      <div className="flex items-center ml-0 xl:ml-[-15px] p-3 space-x-2 bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026]">
+        <div className="flex items-center ml-[15px] sm:ml-0 bg-black p-2 rounded-lg w-full max-w-xl border border-purple-500">
           <input
             type="text"
             placeholder="Type your message ..."
@@ -213,6 +253,7 @@ const Chat = () => {
         </div>
         <button
           onClick={handleMic}
+          onKeyDown={handleEnter}
           disabled={listening}
           className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600 transition-colors"
         >
@@ -230,4 +271,3 @@ const Chat = () => {
 };
 
 export default Chat;
-
