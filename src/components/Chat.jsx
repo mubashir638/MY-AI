@@ -145,12 +145,17 @@ const Chat = () => {
     speechSynthesis.speak(utterance);
   };
 
+  const messagesRef = useRef("");
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
   return (
     <section className="ml-[-85px] sm:ml-24 xl:ml-0 lg:ml-12 flex flex-col h-screen text-white">
       {/* Navbar */}
-      <div className="flex items-center justify-between ml-0 xl:ml-[-15px] bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026] p-3">
+      <div className="flex items-center justify-between ml-0 xl:ml-[-30px] bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026] p-3">
         <div className="flex items-center space-x-2">
-          <div className="bg-[#130E21] rounded-full ml-[80px] sm:ml-14 p-2">
+          <div className="bg-[#130E21] rounded-full ml-[80px] sm:ml-14  p-2">
             <Bot className="h-7 w-7 text-blue-600" />
           </div>
           <div className="flex-col hidden sm:flex">
@@ -167,7 +172,7 @@ const Chat = () => {
         </button>
       </div>
 
-      <hr className="border-zinc-700 ml-0 xl:ml-[-15px]" />
+      <hr className="border-zinc-700 ml-0 xl:ml-[-35px]" />
 
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4">
@@ -188,7 +193,7 @@ const Chat = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-2 ml-5 sm:ml-0">
+          <div className="space-y-2 ml-2 sm:ml-0">
             {messages.map((msg, index) => (
               <div
                 key={index}
@@ -196,6 +201,13 @@ const Chat = () => {
                   msg.sender === "user" ? "justify-end" : "justify-start"
                 }`}
               >
+                {msg.sender === "bot" && (
+                  <div className="flex items-start mr-2 mt-1">
+                    <div className="bg-[#130E21] rounded-full p-2">
+                      <Bot className="h-5 w-5 text-blue-600" />
+                    </div>
+                  </div>
+                )}
                 <div
                   className={`relative px-4 py-2 rounded-lg max-w-[90%] sm:max-w-2xl text-sm sm:text-lg break-words whitespace-pre-wrap ${
                     msg.sender === "user"
@@ -206,7 +218,7 @@ const Chat = () => {
                   {msg.text}
 
                   {msg.sender !== "user" && (
-                    <div className="mt-2 flex justify-end">
+                    <div className="mt-1 flex justify-end">
                       <button
                         onClick={() => speak(msg.text, index)}
                         className="text-white p-2 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 "
@@ -224,8 +236,11 @@ const Chat = () => {
               </div>
             ))}
             {isTyping && (
-              <div className="flex justify-start">
-                <div className="flex space-x-1 bg-[#155DFC] p-2 rounded-lg">
+              <div className="flex justify-start h-10 ml-[-10px] ">
+                <div className="bg-[#130E21] rounded-full p-2 mr-2 mt-1">
+                  <Bot className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="flex space-x-1 h-7 mt-2 bg-[#155DFC] p-2 rounded-lg">
                   <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                   <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                   <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
@@ -240,8 +255,8 @@ const Chat = () => {
       <hr className="border-zinc-700 ml-0 xl:ml-[-15px]" />
 
       {/* Input area */}
-      <div className="flex items-center ml-0 xl:ml-[-15px] p-3 space-x-2 bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026]">
-        <div className="flex items-center ml-[15px] sm:ml-0 bg-black p-2 rounded-lg w-full max-w-xl border border-purple-500">
+      <div className="flex items-center ml-0 xl:ml-[-30px] p-3 space-x-2 bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026]">
+        <div className="flex items-center ml-[15px] sm:ml-0 xl:ml-10 bg-black p-2 rounded-lg w-full max-w-xl border border-purple-500">
           <input
             type="text"
             placeholder="Type your message ..."
