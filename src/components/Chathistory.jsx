@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Menu, X, Trash2, Ellipsis } from "lucide-react";
+import { Menu, X, Trash2, Ellipsis, Pencil } from "lucide-react";
 
 const Chathistory = ({ chats, setChats, onSelectChat }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showMenuForId, setShowMenuForId] = useState(null);
+  const [renamingChatId, setRenamingChatId] = useState(null);
+  const [newTitle, setNewTitle] = useState("");
 
   const handleSelect = (chat) => {
     onSelectChat(chat);
@@ -23,6 +25,22 @@ const Chathistory = ({ chats, setChats, onSelectChat }) => {
     setShowMenuForId(null);
   };
 
+  const handleRenameClick = (chat) => {
+    setRenamingChatId(chat.id);
+    setNewTitle(chat.title);
+    setShowMenuForId(null);
+  };
+
+  const handleRenameSubmit = (id) => {
+    const updatedChats = chats.map((chat) =>
+      chat.id === id ? { ...chat, title: newTitle } : chat
+    );
+    setChats(updatedChats);
+    localStorage.setItem("chats", JSON.stringify(updatedChats));
+    setRenamingChatId(null);
+    setNewTitle("");
+  };
+
   return (
     <>
       <button
@@ -34,7 +52,7 @@ const Chathistory = ({ chats, setChats, onSelectChat }) => {
 
       {isOpen && (
         <div
-          className="fixed inset-0  bg-opacity-50 z-30 md:hidden"
+          className="fixed inset-0 bg-opacity-50 z-30 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -45,7 +63,7 @@ const Chathistory = ({ chats, setChats, onSelectChat }) => {
         ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static md:block`}
       >
         <div className="p-4 h-full flex flex-col">
-          {/* Close button mobile */}
+ 
           <button
             onClick={() => setIsOpen(false)}
             className="absolute top-2 right-2 md:hidden text-white"
@@ -53,7 +71,7 @@ const Chathistory = ({ chats, setChats, onSelectChat }) => {
             <X size={24} />
           </button>
 
-          <h1 className="text-xl font-semibold  mb-4">CHAT HISTORY :</h1>
+          <h1 className="text-xl font-semibold mb-4">CHAT HISTORY :</h1>
 
           <div className="flex-1 overflow-y-auto">
             {chats.length === 0 ? (
@@ -65,12 +83,26 @@ const Chathistory = ({ chats, setChats, onSelectChat }) => {
                     key={chat.id}
                     className="relative group flex justify-between items-center bg-[#155DFC] rounded-md p-2"
                   >
-                    <span
-                      className="cursor-pointer text-sm flex-1 pr-2"
-                      onClick={() => handleSelect(chat)}
-                    >
-                      {chat.title}
-                    </span>
+                    {renamingChatId === chat.id ? (
+                      <input
+                        type="text"
+                        value={newTitle}
+                        onChange={(e) => setNewTitle(e.target.value)}
+                        onBlur={() => handleRenameSubmit(chat.id)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && handleRenameSubmit(chat.id)
+                        }
+                        autoFocus
+                        className="flex-1 pr-2 text-sm bg-transparent text-white outline-none"
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer text-sm flex-1 pr-2"
+                        onClick={() => handleSelect(chat)}
+                      >
+                        {chat.title}
+                      </span>
+                    )}
 
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                       <Ellipsis
@@ -87,6 +119,14 @@ const Chathistory = ({ chats, setChats, onSelectChat }) => {
                     {showMenuForId === chat.id && (
                       <div className="absolute right-2 top-10 z-50 w-48 bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026] text-white shadow-lg rounded-md border border-zinc-700 py-2 text-sm">
                         <button
+                          onClick={() => handleRenameClick(chat)}
+                          className="flex cursor-pointer w-full items-center gap-2 px-4 py-2 text-left hover:bg-purple-600 hover:rounded-lg transition-colors"
+                        >
+                          <Pencil size={16} className="text-white" />
+                          <span className="text-white">Rename chat</span>
+                        </button>
+
+                        <button
                           onClick={() => deleteSingleChat(chat.id)}
                           className="flex cursor-pointer w-full items-center gap-2 px-4 py-2 text-left hover:bg-red-600 hover:rounded-lg transition-colors"
                         >
@@ -100,6 +140,7 @@ const Chathistory = ({ chats, setChats, onSelectChat }) => {
               </ul>
             )}
           </div>
+
           {chats.length > 0 && (
             <button
               onClick={clearAllChats}
