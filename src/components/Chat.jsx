@@ -9,6 +9,16 @@ const Chat = () => {
   const [Sendmessage, setSendMessage] = useState(false);
   const [speakingIndex, setSpeakingIndex] = useState(null);
 
+  // ✨ Prompt Suggestions & Tag logic
+  const promptSuggestions = [
+    "Summarize this article",
+    "Write an email",
+    "Explain a concept",
+    "Give me study tips",
+    "What's the weather?",
+  ];
+  const [selectedTag, setSelectedTag] = useState("General"); // logic only
+
   const getStorechats = () => {
     return JSON.parse(localStorage.getItem("chats") || "[]");
   };
@@ -48,6 +58,7 @@ const Chat = () => {
         id: `chat-${Date.now()}`,
         title: userText.slice(0, 30),
         messages: [userMessage, botMessage],
+        tag: selectedTag, // 💾 store tag (logic only)
       };
       saveChatsLocalStorage([newChat, ...chats]);
     } catch (error) {
@@ -191,6 +202,23 @@ const Chat = () => {
               </h2>
               <p>How can I help you today?</p>
             </div>
+
+            
+
+            <div className="mt-4 text-sm sm:text-base text-gray-300  flex flex-col items-center">
+              
+              <div className="flex  flex-wrap justify-center gap-2">
+                {promptSuggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setMessage(s)}
+                    className="bg-purple-700 cursor-pointer hover:bg-purple-800 text-white px-3 py-1 rounded-md text-xs sm:text-sm transition"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-2 ml-2 sm:ml-0">
@@ -255,17 +283,18 @@ const Chat = () => {
       <hr className="border-zinc-700 ml-0 xl:ml-[-15px]" />
 
       {/* Input area */}
-      <div className="flex items-center ml-0 xl:ml-[-30px] p-3 space-x-2 bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026]">
-        <div className="flex items-center ml-[15px] sm:ml-0 xl:ml-10 bg-black p-2 rounded-lg w-full max-w-xl border border-purple-500">
+      <div className="flex items-center  xl:ml-[-29px] p-3 space-x-2 bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026]">
+        <div className="flex items-center ml-4 sm:ml-0 xl:ml-5 flex-grow bg-black p-2 rounded-lg border border-purple-500">
           <input
             type="text"
             placeholder="Type your message ..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleEnter}
-            className="flex-1 w-[50%] sm:w-full text-white placeholder-gray-400 outline-none px-2 bg-transparent"
+            className="w-full text-white placeholder-gray-400 outline-none px-2 bg-transparent"
           />
         </div>
+
         <button
           onClick={handleMic}
           onKeyDown={handleEnter}
@@ -274,6 +303,7 @@ const Chat = () => {
         >
           <Mic className="text-white w-5 h-5" />
         </button>
+
         <button
           onClick={handleSend}
           className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600"
