@@ -8,16 +8,54 @@ const Chat = () => {
   const [listening, setListening] = useState(false);
   const [Sendmessage, setSendMessage] = useState(false);
   const [speakingIndex, setSpeakingIndex] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingText, setEditingText] = useState("");
 
-  // ✨ Prompt Suggestions & Tag logic
-  const promptSuggestions = [
-    "Summarize this article",
-    "Write an email",
-    "Explain a concept",
-    "Give me study tips",
-    "What's the weather?",
-  ];
-  const [selectedTag, setSelectedTag] = useState("General"); // logic only
+const defaultSuggestions = [
+  "Summarize this article",
+  "Write an email",
+  "Explain a concept",
+  "Give me study tips",
+  "What's the weather?",
+  "Write a cover letter for a developer job",
+  "Give me a fun fact",
+  "Summarize this YouTube video",
+  "Create a slogan for my brand",
+  "Explain AI to a 5-year-old",
+  "Suggest a weekend movie",
+  "Write a tweet about motivation",
+  "Generate a quiz about history",
+  "Give me startup name ideas",
+  "Plan a birthday party",
+  "Design a morning routine",
+  "Write a scary story in 3 lines",
+  "What are today’s top news?",
+  "Give a random life hack",
+  "Convert this to passive voice",
+  "How do I start freelancing?",
+  "Generate a riddle",
+  "Write lyrics in rap style",
+  "Explain the stock market basics",
+  "Write a short script scene",
+];
+
+function shuffle(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+const [promptSuggestions, setPromptSuggestions] = useState([]);
+
+useEffect(() => {
+  setPromptSuggestions(shuffle(defaultSuggestions).slice(0, 3));
+}, []);
+
+
+  const [selectedTag, setSelectedTag] = useState("General");
 
   const getStorechats = () => {
     return JSON.parse(localStorage.getItem("chats") || "[]");
@@ -58,7 +96,7 @@ const Chat = () => {
         id: `chat-${Date.now()}`,
         title: userText.slice(0, 30),
         messages: [userMessage, botMessage],
-        tag: selectedTag, // 💾 store tag (logic only)
+        tag: selectedTag,
       };
       saveChatsLocalStorage([newChat, ...chats]);
     } catch (error) {
@@ -72,13 +110,11 @@ const Chat = () => {
 
   const handleSend = async () => {
     if (message.trim() === "") return;
-
     const userMessage = { sender: "user", text: message };
     setMessages((prev) => [...prev, userMessage]);
     setMessage("");
     setIsTyping(true);
     setSendMessage(true);
-
     await generateBotReply(message, userMessage);
     setIsTyping(false);
   };
@@ -131,12 +167,6 @@ const Chat = () => {
     recognition.start();
   };
 
-  const messagesEndRef = useRef(null);
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    setSendMessage(false);
-  }, [messages]);
-
   const speak = (text, index) => {
     if (speechSynthesis.speaking && speakingIndex === index) {
       speechSynthesis.cancel();
@@ -147,19 +177,37 @@ const Chat = () => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "en-US";
     utterance.rate = 1;
-
-    utterance.onend = () => {
-      setSpeakingIndex(null);
-    };
-
+    utterance.onend = () => setSpeakingIndex(null);
     setSpeakingIndex(index);
     speechSynthesis.speak(utterance);
   };
 
   const messagesRef = useRef("");
+  const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesRef.current = messages;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setSendMessage(false);
   }, [messages]);
+
+  const handleEdit = (index) => {
+    setEditingIndex(index);
+    setEditingText(messages[index].text);
+  };
+
+  const handleEditKeyDown = async (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const newMessages = [...messages];
+      const original = newMessages[editingIndex];
+      newMessages[editingIndex] = { ...original, text: editingText };
+      setMessages(newMessages.slice(0, editingIndex + 1));
+      setEditingIndex(null);
+      setIsTyping(true);
+      await generateBotReply(editingText, newMessages[editingIndex]);
+      setIsTyping(false);
+    }
+  };
 
   return (
     <section className="ml-[-85px] sm:ml-24 xl:ml-0 lg:ml-12 flex flex-col h-screen text-white">
@@ -203,11 +251,8 @@ const Chat = () => {
               <p>How can I help you today?</p>
             </div>
 
-            
-
             <div className="mt-4 text-sm sm:text-base text-gray-300  flex flex-col items-center">
-              
-              <div className="flex  flex-wrap justify-center gap-2">
+              <div className="flex flex-wrap justify-center gap-2">
                 {promptSuggestions.map((s, i) => (
                   <button
                     key={i}
@@ -242,9 +287,21 @@ const Chat = () => {
                       ? "bg-[#155DFC] text-white"
                       : "bg-purple-600 text-gray-200"
                   }`}
+                  onClick={() =>
+                    msg.sender === "user" ? handleEdit(index) : null
+                  }
                 >
-                  {msg.text}
-
+                  {editingIndex === index ? (
+                    <input
+                      className="w-full bg-transparent text-white outline-none border-b border-gray-400"
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onKeyDown={handleEditKeyDown}
+                      autoFocus
+                    />
+                  ) : (
+                    msg.text
+                  )}
                   {msg.sender !== "user" && (
                     <div className="mt-1 flex justify-end">
                       <button
@@ -283,7 +340,7 @@ const Chat = () => {
       <hr className="border-zinc-700 ml-0 xl:ml-[-15px]" />
 
       {/* Input area */}
-      <div className="flex items-center  xl:ml-[-29px] p-3 space-x-2 bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026]">
+      <div className="flex items-center xl:ml-[-29px] p-3 space-x-2 bg-gradient-to-br from-[#1e002c] via-[#3a006f] to-[#120026]">
         <div className="flex items-center ml-4 sm:ml-0 xl:ml-5 flex-grow bg-black p-2 rounded-lg border border-purple-500">
           <input
             type="text"
@@ -297,7 +354,6 @@ const Chat = () => {
 
         <button
           onClick={handleMic}
-          onKeyDown={handleEnter}
           disabled={listening}
           className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600 transition-colors"
         >
