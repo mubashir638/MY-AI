@@ -11,49 +11,48 @@ const Chat = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingText, setEditingText] = useState("");
 
-const defaultSuggestions = [
-  "Summarize this article",
-  "Write an email",
-  "Explain a concept",
-  "Give me study tips",
-  "What's the weather?",
-  "Write a cover letter for a developer job",
-  "Give me a fun fact",
-  "Summarize this YouTube video",
-  "Create a slogan for my brand",
-  "Explain AI to a 5-year-old",
-  "Suggest a weekend movie",
-  "Write a tweet about motivation",
-  "Generate a quiz about history",
-  "Give me startup name ideas",
-  "Plan a birthday party",
-  "Design a morning routine",
-  "Write a scary story in 3 lines",
-  "What are today’s top news?",
-  "Give a random life hack",
-  "Convert this to passive voice",
-  "How do I start freelancing?",
-  "Generate a riddle",
-  "Write lyrics in rap style",
-  "Explain the stock market basics",
-  "Write a short script scene",
-];
+  const defaultSuggestions = [
+    "Summarize this article",
+    "Write an email",
+    "Explain a concept",
+    "Give me study tips",
+    "What's the weather?",
+    "Write a cover letter for a developer job",
+    "Give me a fun fact",
+    "Summarize this YouTube video",
+    "Create a slogan for my brand",
+    "Explain AI to a 5-year-old",
+    "Suggest a weekend movie",
+    "Write a tweet about motivation",
+    "Generate a quiz about history",
+    "Give me startup name ideas",
+    "Plan a birthday party",
+    "Design a morning routine",
+    "Write a scary story in 3 lines",
+    "What are today’s top news?",
+    "Give a random life hack",
+    "Convert this to passive voice",
+    "How do I start freelancing?",
+    "Generate a riddle",
+    "Write lyrics in rap style",
+    "Explain the stock market basics",
+    "Write a short script scene",
+  ];
 
-function shuffle(array) {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  function shuffle(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }
-  return shuffled;
-}
 
-const [promptSuggestions, setPromptSuggestions] = useState([]);
+  const [promptSuggestions, setPromptSuggestions] = useState([]);
 
-useEffect(() => {
-  setPromptSuggestions(shuffle(defaultSuggestions).slice(0, 3));
-}, []);
-
+  useEffect(() => {
+    setPromptSuggestions(shuffle(defaultSuggestions).slice(0, 3));
+  }, []);
 
   const [selectedTag, setSelectedTag] = useState("General");
 
@@ -105,6 +104,18 @@ useEffect(() => {
         ...prev,
         { sender: "bot", text: ` Error: ${error.message}` },
       ]);
+    }
+  };
+
+  const fileInputRef = useRef(null);
+  const handleAttachFile = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log("Selected file:", file);
     }
   };
 
@@ -252,7 +263,7 @@ useEffect(() => {
             </div>
 
             <div className="mt-4 text-sm sm:text-base text-gray-300  flex flex-col items-center">
-              <div className="flex flex-wrap justify-center gap-2">
+              <div className=" flex flex-col sm:flex-row justify-center gap-2 md:ml-1 xl:ml-0">
                 {promptSuggestions.map((s, i) => (
                   <button
                     key={i}
@@ -355,14 +366,43 @@ useEffect(() => {
         <button
           onClick={handleMic}
           disabled={listening}
-          className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600 transition-colors"
+          className="p-3 cursor-pointer rounded-full bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600 transition-colors"
         >
           <Mic className="text-white w-5 h-5" />
         </button>
 
         <button
+          onClick={handleAttachFile}
+          className="p-3 rounded-full cursor-pointer bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600 transition-colors"
+          title="Attach file"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-5 h-5 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16.5 7.5L7.5 16.5a3 3 0 004.24 4.24l9-9a5 5 0 00-7.07-7.07l-10 10"
+            />
+          </svg>
+        </button>
+
+        <input
+          type="file"
+          accept="image/*,video/*"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        <button
           onClick={handleSend}
-          className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600"
+          className="p-3 rounded-full bg-gradient-to-r cursor-pointer from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600"
         >
           <Send size={20} className="text-white" />
         </button>
